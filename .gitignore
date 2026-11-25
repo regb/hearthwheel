@@ -1,0 +1,5 @@
+/bazel-*
+/.bazelrc.user
+*.save
+.DS_Store
+*.swp
