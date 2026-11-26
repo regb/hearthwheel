@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://regb.github.io/hearthwheel/"><img src="marketing/screenshots/title.jpg" alt="Hearthwheel: build, guard and wind the year" width="100%"></a>
+  <a href="https://regb.github.io/hearthwheel/"><img src="marketing/banner.jpg" alt="Hearthwheel: build, guard and wind the year" width="100%"></a>
 </p>
 
 <p align="center">
@@ -9,14 +9,19 @@
 </p>
 
 <p align="center">
-  <a href="https://regb.github.io/hearthwheel/">Play in your browser</a> ·
+  <a href="https://regb.github.io/hearthwheel/"><img src="https://img.shields.io/badge/%E2%96%B6%20Play%20now-in%20your%20browser-C8692E?style=for-the-badge" alt="Play now in your browser"></a>
+</p>
+
+<p align="center">
+  <a href="https://regb.github.io/hearthwheel/">regb.github.io/hearthwheel</a> ·
   <a href="https://github.com/regb/scala-game-library">Built with SGL</a>
 </p>
 
 <p align="center">
-  <img src="marketing/screenshots/winter.jpg" width="32%" alt="A factory in winter">
-  <img src="marketing/screenshots/valleys.jpg" width="32%" alt="The region and its valleys">
-  <img src="marketing/screenshots/loom.jpg" width="32%" alt="A loom, which automates buildings">
+  <img src="marketing/screenshots/title.jpg" width="24%" alt="The title screen">
+  <img src="marketing/screenshots/winter.jpg" width="24%" alt="A factory in winter">
+  <img src="marketing/screenshots/valleys.jpg" width="24%" alt="The region and its valleys">
+  <img src="marketing/screenshots/loom.jpg" width="24%" alt="A loom, which automates buildings">
 </p>
 
 ## The year
@@ -84,6 +89,13 @@ common --override_module=sgl.bzl=/path/to/scala-game-library
   ```bash
   java tools/Art.java assets/sprites view/Sheet.scala
   python3 tools/audio.py assets/audio
+  ```
+
+  `Banner.java` makes the banner above, from the seasons that `//:banner` draws:
+
+  ```bash
+  EGL_PLATFORM=surfaceless DISPLAY= bazel run //:banner -- /tmp/seasons
+  java tools/Banner.java /tmp/seasons marketing/banner.jpg
   ```
 - `test/`: the rules, and the game played without a window.
 

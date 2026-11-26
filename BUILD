@@ -163,6 +163,20 @@ scala_test(
     deps = _HEADLESS_DEPS,
 )
 
+# The seasons for the banner of the README: see tools/Banner.java.
+scala_binary(
+    name = "banner",
+    srcs = [
+        "test/Banner.scala",
+        "test/Headless.scala",
+    ],
+    data = [":sprite_atlas"],
+    main_class = "hearthwheel.Banner",
+    scalacopts = SGL_SCALACOPTS,
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = _HEADLESS_DEPS,
+)
+
 # How much the engine and the game can take: see README.md.
 scala_binary(
     name = "stress",
