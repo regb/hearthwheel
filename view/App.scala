@@ -43,6 +43,11 @@ trait AbstractApp extends OpenGLGameObjectApp with AssetsProvider with Sheet {
   protected def firstScene: Scene = TitleScene
   protected def newSeed: Long = System.currentTimeMillis
 
+  /** How loud everything is at full volume: the sounds and music are as loud as
+    * they can be, and music and air play at once.
+    */
+  private val MasterGain = 0.5f
+
   private object services extends Services {
     private val sounds = mutable.Map.empty[SoundKind, Loader[Audio.Sound]]
     private var tracks: Vector[Loader[Audio.Music]] = Vector.empty
@@ -105,8 +110,15 @@ trait AbstractApp extends OpenGLGameObjectApp with AssetsProvider with Sheet {
     // A sound that could not load is one that is not heard.
     override def play(sound: SoundKind, volume: Float, rate: Float): Unit =
       sounds.get(sound).flatMap(_.value).flatMap(_.toOption).foreach { loaded =>
-        val _ = loaded.play(volume)
+        val _ = loaded.play(volume * MasterGain * trim(sound))
       }
+
+    // Every sound is made as loud as it can be: these are louder than others.
+    private def trim(sound: SoundKind): Float = sound match {
+      case SoundKind.Deny => 0.45f
+      case SoundKind.Alarm => 0.6f
+      case _ => 1f
+    }
 
     override def music(piece: Int): Unit = wanted = piece
     override def air(season: Int): Unit = wantedAir = season
@@ -122,7 +134,7 @@ trait AbstractApp extends OpenGLGameObjectApp with AssetsProvider with Sheet {
             val step = dt / 3f
             val now = if(goal > before) scala.math.min(goal, before + step) else scala.math.max(goal, before - step)
             volumes(i) = now
-            track.setVolume(now * (if(i < 5) musicVolume else airVolume))
+            track.setVolume(now * MasterGain * (if(i < 5) musicVolume else airVolume))
             if(before == 0f && now > 0f) track.play()
             if(before > 0f && now == 0f) track.stop()
           }

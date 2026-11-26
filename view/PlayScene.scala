@@ -240,7 +240,7 @@ object EffectsSystem extends GameSystem {
           case SoundKind.Chomp | SoundKind.Death | SoundKind.Spray | SoundKind.Beam => 0.2f
           case SoundKind.Zap | SoundKind.Bolt | SoundKind.Lob => 0.28f
           case SoundKind.Boom | SoundKind.Break => 0.36f
-          case _ => 0.6f
+          case _ => 0.45f
         }
         if(!play.attract) play.services.play(s.kind, scala.math.max(0.02f, base * (1f - 0.6f * distance)) * play.profile.soundVolume, 1f)
       }
