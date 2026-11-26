@@ -6,9 +6,53 @@ import array, math, os, random, sys, wave
 
 TAU = math.tau
 
-def save(path, samples, rate):
+# How loud each kind of sound is made, in LUFS (ITU-R BS.1770): effects by
+# their loudest tenth of a second, music and air over their whole length. Air
+# stays under the music. No sample goes above -1 dBFS.
+LOUDNESS = {"effect": -15.0, "music": -18.0, "air": -22.0}
+CEILING = 10 ** (-1 / 20)
+
+def biquad(x, b, a):
+    y, x1, x2, y1, y2 = [0.0] * len(x), 0.0, 0.0, 0.0, 0.0
+    for i, v in enumerate(x):
+        o = b[0] * v + b[1] * x1 + b[2] * x2 - a[1] * y1 - a[2] * y2
+        x2, x1, y2, y1 = x1, v, y1, o
+        y[i] = o
+    return y
+
+def k_weighted(x, rate):
+    """What the ear hears more of: the high shelf and high pass of BS.1770."""
+    a, w = 10 ** (4.0 / 40), TAU * 1500.0 / rate
+    al, c = math.sin(w) / math.sqrt(2), math.cos(w)
+    a0 = (a + 1) - (a - 1) * c + 2 * math.sqrt(a) * al
+    x = biquad(x, [a * ((a + 1) + (a - 1) * c + 2 * math.sqrt(a) * al) / a0, -2 * a * ((a - 1) + (a + 1) * c) / a0,
+                   a * ((a + 1) + (a - 1) * c - 2 * math.sqrt(a) * al) / a0],
+               [1, 2 * ((a - 1) - (a + 1) * c) / a0, ((a + 1) - (a - 1) * c - 2 * math.sqrt(a) * al) / a0])
+    w = TAU * 38.0 / rate
+    al, c = math.sin(w), math.cos(w)
+    a0 = 1 + al
+    return biquad(x, [(1 + c) / 2 / a0, -(1 + c) / a0, (1 + c) / 2 / a0], [1, -2 * c / a0, (1 - al) / a0])
+
+def loudness(samples, rate, kind):
+    y = k_weighted(samples, rate)
+    def lufs(power): return -0.691 + 10 * math.log10(max(power, 1e-12))
+    if kind == "effect":
+        n, hop = min(len(y), int(0.1 * rate)), int(0.01 * rate)
+        return lufs(max(sum(v * v for v in y[i:i + n]) for i in range(0, len(y) - n + 1, hop)) / n)
+    n = int(0.4 * rate)
+    blocks = [sum(v * v for v in y[i:i + n]) / n for i in range(0, len(y) - n + 1, n // 4)]
+    blocks = [b for b in blocks if lufs(b) > -70]
+    gate = lufs(sum(blocks) / len(blocks)) - 10
+    blocks = [b for b in blocks if lufs(b) > gate]
+    return lufs(sum(blocks) / len(blocks))
+
+def save(path, samples, rate, kind):
+    k = 10 ** ((LOUDNESS[kind] - loudness(samples, rate, kind)) / 20)
     peak = max(1e-6, max(abs(s) for s in samples))
-    k = 30000 / peak
+    if peak * k > CEILING:
+        print("%s: %.1f dB under its loudness, to stay under the ceiling" % (os.path.basename(path), 20 * math.log10(peak * k / CEILING)))
+        k = CEILING / peak
+    k *= 32767
     with wave.open(path, "wb") as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate)
         w.writeframes(array.array("h", [int(s * k) for s in samples]).tobytes())
@@ -98,7 +142,7 @@ def effects(d):
         "horn": mix((tone(1.1, 220, 222, "saw", attack=0.08, decay=1.6, vibrato=0.008), 0.5, 0), (tone(1.1, 330, 333, "saw", attack=0.1, decay=1.8), 0.35, 0.05)),
         "death": mix((hiss(0.16, 2600, 500, decay=20, seed=6), 1, 0), (tone(0.16, 420, 120, "tri", decay=18), 0.7, 0)),
     }
-    for name, samples in fx.items(): save(os.path.join(d, name + ".wav"), samples, R)
+    for name, samples in fx.items(): save(os.path.join(d, name + ".wav"), samples, R, "effect")
     return len(fx)
 
 # -------------------------------------------------------------------- music
@@ -217,7 +261,7 @@ def music(d):
     }
     tracks["music_battle"] = compose(57, 118, minor, 196.0, [0, 0, 5, 6, 0, 0, 3, 4], "pluck", 0.82, 0.5, 0.15, 0.62, 2)
     tracks.update(ambience())
-    for name, samples in tracks.items(): save(os.path.join(d, name + ".wav"), samples, M)
+    for name, samples in tracks.items(): save(os.path.join(d, name + ".wav"), samples, M, "air" if name.startswith("amb_") else "music")
     return len(tracks)
 
 if __name__ == "__main__":

@@ -43,10 +43,10 @@ trait AbstractApp extends OpenGLGameObjectApp with AssetsProvider with Sheet {
   protected def firstScene: Scene = TitleScene
   protected def newSeed: Long = System.currentTimeMillis
 
-  /** How loud everything is at full volume: the sounds and music are as loud as
-    * they can be, and music and air play at once.
+  /** How loud everything is at full volume. tools/audio.py makes every effect,
+    * piece of music and air as loud as the others of its kind.
     */
-  private val MasterGain = 0.5f
+  private val MasterGain = 0.7f
 
   private object services extends Services {
     private val sounds = mutable.Map.empty[SoundKind, Loader[Audio.Sound]]
@@ -110,15 +110,8 @@ trait AbstractApp extends OpenGLGameObjectApp with AssetsProvider with Sheet {
     // A sound that could not load is one that is not heard.
     override def play(sound: SoundKind, volume: Float, rate: Float): Unit =
       sounds.get(sound).flatMap(_.value).flatMap(_.toOption).foreach { loaded =>
-        val _ = loaded.play(volume * MasterGain * trim(sound))
+        val _ = loaded.play(volume * MasterGain)
       }
-
-    // Every sound is made as loud as it can be: these are louder than others.
-    private def trim(sound: SoundKind): Float = sound match {
-      case SoundKind.Deny => 0.45f
-      case SoundKind.Alarm => 0.6f
-      case _ => 1f
-    }
 
     override def music(piece: Int): Unit = wanted = piece
     override def air(season: Int): Unit = wantedAir = season
