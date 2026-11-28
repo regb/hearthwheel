@@ -7,7 +7,7 @@ module(name = "hearthwheel")
 bazel_dep(name = "sgl.bzl", version = "0.0.0", repo_name = "sgl")
 git_override(
     module_name = "sgl.bzl",
-    commit = "647df5d894c47521d467f9694e2924652d411980",
+    commit = "ae53b9e03126694ed80d415026d918910a0b4384",
     remote = "https://github.com/regb/scala-game-library.git",
 )
 
